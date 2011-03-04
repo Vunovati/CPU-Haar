@@ -62,23 +62,23 @@ float *CV2float(IplImage *img)
 {
 	float* out_image = new float[img->width * img->height * 4];
 
-	if (img->nChannels = 1)
+	//if (img->nChannels == 1)
+	//{
+	for (int i = 0; i < (img->width * img->height); i++)
 	{
-		for (int i = 0; i < (img->width * img->height); i++)
-		{
-			out_image[i] = (unsigned char)img->imageData[i] / 255.f; // pretvori svaki element iz chara u float (vrijednosti 0..1)
-		}
+		out_image[i] = (unsigned char)img->imageData[i] / 255.f; // pretvori svaki element iz chara u float (vrijednosti 0..1)
 	}
-	else
-	{
-	  for (int i = 0; i < (img->width * img->height * 4); i++)
-		{
-			out_image[i * 3 + 0] = (unsigned char)img->imageData[i * 4 + 0] / 255.f; // |B|G|R|prazno|B|G|R|prazno|B|G|R|prazno|
-			out_image[i * 3 + 1] = (unsigned char)img->imageData[i * 4 + 1] / 255.f;
-			out_image[i * 3 + 2] = (unsigned char)img->imageData[i * 4 + 2] / 255.f;
-		}
-	
-	}
+	//}
+	//else
+	//{
+	//  for (int i = 0; i < (img->width * img->height * 4); i++)
+	//	{
+	//		out_image[i * 3 + 0] = (unsigned char)img->imageData[i * 4 + 0] / 255.f; // |B|G|R|prazno|B|G|R|prazno|B|G|R|prazno|
+	//		out_image[i * 3 + 1] = (unsigned char)img->imageData[i * 4 + 1] / 255.f;
+	//		out_image[i * 3 + 2] = (unsigned char)img->imageData[i * 4 + 2] / 255.f;
+	//	}
+	//
+	//}
 
 
 	return( out_image );
@@ -87,96 +87,183 @@ float *CV2float(IplImage *img)
 char *float2CVdata(float *image, int nPixels, int channels)
 {
 	char* out_char = new char[nPixels * 4];
-		
-	if (channels = 1)
+	//	
+	//if (channels = 1)
+	//{
+	for (int i = 0; i<(nPixels); i++)
 	{
-		for (int i = 0; i<(nPixels); i++)
-		{
-			out_char[i] = (char)floor(image[i] * 255.f); // prebaci nazad u char
-		}
+		out_char[i] = (char)floor(image[i] * 255.f); // prebaci nazad u char
 	}
-	else
-	{
-		for (int i = 0; i < (nPixels * 4); i++)
-		{
-			out_char[i * 4 + 0] = (char)floor(image[i * 3 + 0] * 255.f);
-			out_char[i * 4 + 0] = (char)floor(image[i * 3 + 0] * 255.f);
-			out_char[i * 4 + 0] = (char)floor(image[i * 3 + 0] * 255.f);		
-		}	
-	}
+	//}
+	//else
+	//{
+	//	for (int i = 0; i < (nPixels * 4); i++)
+	//	{
+	//		out_char[i * 4 + 0] = (char)floor(image[i * 3 + 0] * 255.f);
+	//		out_char[i * 4 + 0] = (char)floor(image[i * 3 + 0] * 255.f);
+	//		out_char[i * 4 + 0] = (char)floor(image[i * 3 + 0] * 255.f);		
+	//	}	
+	//}
 
 	return( out_char );
 }
 
 int main(int argc, char *argv[])
 {
-	//IplImage* img = cvLoadImage("testnaslika.jpg", CV_LOAD_IMAGE_UNCHANGED); 
-	IplImage* img = cvLoadImage("testnaslika.jpg", CV_LOAD_IMAGE_GRAYSCALE);   
-	int height,width,step,channels, i;
+
+	CvCapture* capture = cvCaptureFromCAM(0); // capture from video device
 
 
-	// get the image data
-	height    = img->height;
-	width     = img->width;
-	step      = img->widthStep;
-	channels  = img->nChannels;
-	/*data      = (uchar *)img->imageData;*/
-	printf("Processing a %dx%d image with %d channels\n",height,width,channels); 
-
-	float* cpu_image = new float[width * height * 4];
-
-	float* filtered_image = new float[width * height * 4];
-	float* filtered_blue = new float[width * height * 4];
-	float* filtered_green = new float[width * height * 4];
-	float* filtered_red = new float[width * height * 4];
-
-
-	char* buff = new char[(width) * (height) * 4];
-	IplImage* out_image = cvCreateImage(cvSize(width, height), img->depth, channels);
-
-	cpu_image = CV2float(img);
-
-
-	if (channels = 1)
+	if(!cvGrabFrame(capture))
 	{
-		filtered_image = haarStep(cpu_image, height, width); // pozivamo funkciju za haar
+		printf("could not grab a frame\n\7");
+		exit(0);
 	}
-	else 
-	{
-		filtered_blue = haarStepBGR(cpu_image, height, width, 0); // haar na plavom kanalu
-		filtered_green = haarStepBGR(cpu_image, height, width, 1); // haar na zelenom kanalu
-		filtered_red = haarStepBGR(cpu_image, height, width, 2); // haar na crvenom kanalu
 
-		for (i = 0; i< height * width; i++)
+
+	while(true)
+	{
+		IplImage* frame = 0;
+
+
+		if(!cvGrabFrame(capture))
 		{
-			filtered_image[i * 3 + 0] = filtered_blue[i];
-			filtered_image[i * 3 + 1] = filtered_green[i];
-			filtered_image[i * 3 + 2] = filtered_red[i];
+			printf("could not grab a frame\n\7");
+			exit(0);
 		}
+
+		frame = cvRetrieveFrame(capture); // retrieve the captured frame
+
+		cvSetImageROI(frame, cvRect(0,0,400,400)); // namjesti ROI
+
+
+
+		IplImage* img = cvCreateImage(cvGetSize(frame), frame->depth, frame->nChannels);
+
+		cvCopy(frame, img, NULL);
+
+		//IplImage* img = cvLoadImage("testnaslika.jpg", CV_LOAD_IMAGE_UNCHANGED); 
+		//IplImage* img = cvLoadImage("testnaslika.jpg", CV_LOAD_IMAGE_GRAYSCALE);   
+
+
+
+		int height,width,step,channels;
+
+
+		// get the image data
+		height    = img->height;
+		width     = img->width;
+		step      = img->widthStep;
+		channels  = img->nChannels;
+		/*data      = (uchar *)img->imageData;*/
+		printf("Processing a %dx%d image with %d channels\n",img->height,img->width,img->nChannels); 
+
+		float* cpu_image = new float[img->width * img->height * 4];
+		float* cpu_blue = new float[img->width * img->height * 4];
+		float* cpu_green = new float[img->width * img->height * 4];
+		float* cpu_red = new float[img->width * img->height * 4];
+
+
+		float* filtered_image = new float[img->width * img->height * 4];
+		float* filtered_blue = new float[img->width * img->height * 4];
+		float* filtered_green = new float[img->width * img->height * 4];
+		float* filtered_red = new float[img->width * img->height * 4];
+
+
+		//char* buff = new char[(width) * (img->height) * 4];
+		//char* blue_buff = new char[(width) * (img->height)];
+		//char* green_buff = new char[(width) * (img->height)];
+		//char* red_buff = new char[(width) * (img->height)];
+		IplImage* out_image = cvCreateImage(cvSize(img->width, img->height), img->depth, img->nChannels);
+		IplImage* blue_image = cvCreateImage(cvSize(img->width, img->height), img->depth, 1);
+		IplImage* green_image = cvCreateImage(cvSize(img->width, img->height), img->depth, 1);
+		IplImage* red_image = cvCreateImage(cvSize(img->width, img->height), img->depth, 1);
+
+
+
+		if (img->nChannels == 1)
+		{
+			cpu_image = CV2float(img);
+
+			filtered_image = haarStep(cpu_image, img->height, img->width); // pozivamo funkciju za haar
+			//buff = float2CVdata(filtered_image, img->width*img->height, img->nChannels);
+			out_image->imageData = float2CVdata(filtered_image, img->width*img->height, img->nChannels);
+			//out_image->imageData = buff; 
+
+
+		}
+		else 
+		{
+			cvSplit(img, blue_image, green_image, red_image, NULL);
+
+			cpu_blue = CV2float(blue_image);
+			cpu_green = CV2float(green_image);
+			cpu_red = CV2float(red_image);
+
+
+			filtered_blue = haarStep(cpu_blue, img->height, img->width);
+			filtered_green = haarStep(cpu_green, img->height, img->width);
+			filtered_red = haarStep(cpu_red, img->height, img->width);
+
+
+			blue_image->imageData = float2CVdata(filtered_blue, img->width*img->height, img->nChannels);
+			green_image->imageData = float2CVdata(filtered_green, img->width*img->height, img->nChannels);
+			red_image->imageData = float2CVdata(filtered_red, img->width*img->height, img->nChannels);
+
+
+			/*blue_image->imageData = blue_buff;*/
+			//green_image->imageData = green_buff;
+			//red_image->imageData = red_buff;
+
+			cvMerge(blue_image, green_image, red_image, NULL, out_image);
+
+			//filtered_blue = haarStepBGR(cpu_image, img->height, img->width, 0); // haar na plavom kanalu
+			//filtered_green = haarStepBGR(cpu_image, img->height, img->width, 1); // haar na zelenom kanalu
+			//filtered_red = haarStepBGR(cpu_image, img->height, img->width, 2); // haar na crvenom kanalu
+
+			//for (i = 0; i< img->height * width; i++)
+			//{
+			//	filtered_image[i * 3 + 0] = filtered_blue[i];
+			//	filtered_image[i * 3 + 1] = filtered_green[i];
+			//	filtered_image[i * 3 + 2] = filtered_red[i];
+			//}
+		}
+
+
+		// show the image
+		cvShowImage("Haar", out_image );
+		cvShowImage("Original", img );
+
+		// wait for a key
+		// cvWaitKey(0);
+
+		int c = cvWaitKey(20); // radimo delay
+
+		if((char)c == 27 )
+			break;
+
+
+		// oslobodi memoriju za buffere
+		delete[] cpu_image;
+		//delete[] buff;
+		//delete[] blue_buff;
+		//delete[] green_buff;
+		//delete[] red_buff;
+		delete[] filtered_image;
+		delete[] filtered_blue;
+		delete[] filtered_green;
+		delete[] filtered_red;
+		cvReleaseImage(&out_image);
+		cvReleaseImage(&blue_image);
+		cvReleaseImage(&green_image);
+		cvReleaseImage(&red_image);
+		// release the image
+		cvReleaseImage(&img );
 	}
 
-	buff = float2CVdata(filtered_image, width*height, channels);
-
-	out_image->imageData = buff; // napunimo podatke za sliku podatcima iz buffera
 
 
-	// show the image
-	cvShowImage("Haar", out_image );
-	cvShowImage("Original", img );
+	cvReleaseCapture(&capture); // automatski realocira i image
 
-	// wait for a key
-	cvWaitKey(0);
-
-	// oslobodi memoriju za buffere
-	delete[] cpu_image;
-	delete[] buff;
-	delete[] filtered_image;
-	delete[] filtered_blue;
-	delete[] filtered_green;
-	delete[] filtered_red;
-
-	// release the image
-	cvReleaseImage(&img );
-	cvReleaseImage(&out_image);
 	return 0;
 }
